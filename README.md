@@ -4,6 +4,10 @@ A graph-coloring workbench with verified assignments, clique witnesses, and boun
 
 ![Palette Proof inspecting a clique witness](docs/workbench.png)
 
+## Interface
+
+Graph, Evidence, and Source are separate workspace views. The graph opens immediately, with vertex selection and edge editing in a side inspector. Search bounds, color groups, traces, and exports live in Evidence. On narrow screens, the inspector follows the graph.
+
 ## Run
 
 Python 3.10+ serves the application. No runtime dependencies or build step.

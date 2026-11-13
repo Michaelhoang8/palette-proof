@@ -82,6 +82,7 @@ function run(raw, remember = true) {
     $("groups").replaceChildren(
       ...Array.from({ length: result.upperBound }, (_, i) => {
         const box = el("div", undefined, "group");
+        box.style.borderTopColor = color(i);
         box.append(
           el("strong", `Color ${i + 1}`),
           el(
@@ -135,7 +136,7 @@ function run(raw, remember = true) {
 function renderGraph() {
   const graph = $("graph");
   graph.replaceChildren();
-  graph.append(shape("rect", { width: 620, height: 540, fill: "#f9f5f6" }));
+  graph.append(shape("rect", { width: 620, height: 540, fill: "#f6f7fb" }));
   graph.append(
     shape("title", {}, `Verified ${result.upperBound}-color assignment`),
   );
@@ -166,9 +167,9 @@ function renderGraph() {
         y1: p.y,
         x2: q.x,
         y2: q.y,
-        stroke: witness ? "#956779" : incident ? "#a997a2" : "#ded4da",
+        stroke: witness ? "#956779" : incident ? "#a997a2" : "#b8bfd2",
         "stroke-width": witness ? 3 : incident ? 1.8 : 1,
-        opacity: witness || incident ? 1 : 0.65,
+        opacity: witness || incident ? 1 : 0.85,
       }),
     );
   }
@@ -201,10 +202,10 @@ function renderGraph() {
         r: 23,
         fill: color(entry.color - 1),
         stroke: chosen
-          ? "#51424b"
+          ? "#292f49"
           : neighbors.includes(entry.vertex)
             ? "#a997a2"
-            : "#f9f5f6",
+            : "#f6f7fb",
         "stroke-width": chosen ? 3 : 2,
       }),
     );
@@ -217,7 +218,7 @@ function renderGraph() {
           "text-anchor": "middle",
           "font-family": "Arial",
           "font-size": 12,
-          fill: "#51424b",
+          fill: "#292f49",
           "pointer-events": "none",
         },
         String(entry.color),
@@ -232,7 +233,7 @@ function renderGraph() {
           "text-anchor": "middle",
           "font-family": "Consolas,monospace",
           "font-size": 11,
-          fill: "#51424b",
+          fill: "#292f49",
           "pointer-events": "none",
         },
         entry.vertex,
@@ -242,6 +243,7 @@ function renderGraph() {
       selected = entry.vertex;
       renderGraph();
       renderInspector();
+      graph.querySelectorAll(".vertex")[i]?.focus({ preventScroll: true });
     };
     group.onclick = choose;
     group.onkeydown = (e) => {
@@ -413,3 +415,12 @@ $("file").onchange = async () => {
   }
 };
 run(example, false);
+
+for (const button of document.querySelectorAll("[data-view]")) {
+  button.onclick = () => {
+    for (const tab of document.querySelectorAll("[data-view]"))
+      tab.setAttribute("aria-pressed", String(tab === button));
+    for (const view of ["canvas", "evidence", "source"])
+      $(view + "-view").hidden = view !== button.dataset.view;
+  };
+}
