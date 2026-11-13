@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Palette Proof · Conflict coloring</title>
+    <link rel="stylesheet" href="style.css" />
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <header>
+      <a href="/">palette proof <span aria-hidden="true">◌</span></a
+      ><span>COMBINATORIAL OPTIMIZATION / COLOR STUDIES</span
+      ><button id="open">Open graph</button
+      ><input id="file" type="file" accept=".json" hidden />
+    </header>
+    <main>
+      <div class="intro">
+        <p class="eyebrow">A conflict deserves a different color.</p>
+        <h1>How few colors<br />can <em>hold the whole?</em></h1>
+        <p>
+          Explore graph coloring with a verified assignment, a clique witness,
+          and honest bounds when exact search runs out of room.
+        </p>
+      </div>
+      <form id="settings" class="toolbar">
+        <label
+          >Available colors<input
+            id="palette"
+            type="number"
+            min="1"
+            max="24"
+            value="3"
+            required /></label
+        ><label
+          >Search-node budget<input
+            id="budget"
+            type="number"
+            min="1"
+            max="200000"
+            value="50000"
+            required /></label
+        ><button class="primary">Solve graph</button
+        ><button id="example" type="button">Four-color example</button
+        ><button id="cycle" type="button">Odd cycle</button>
+      </form>
+      <p id="status" role="status" aria-live="polite"></p>
+      <section id="result" hidden>
+        <div class="metrics">
+          <div><span>Proven lower bound</span><strong id="lower"></strong></div>
+          <div>
+            <span>Verified upper bound</span><strong id="upper"></strong>
+          </div>
+          <div>
+            <span>Requested palette</span><strong id="feasibility"></strong>
+          </div>
+          <div>
+            <span>Exact search nodes</span><strong id="visits"></strong>
+          </div>
+        </div>
+        <div class="graph-layout">
+          <section>
+            <div class="graph-heading">
+              <h2>The conflict graph</h2>
+              <label class="checkbox"
+                ><input id="clique" type="checkbox" /> Highlight clique</label
+              >
+            </div>
+            <svg
+              id="graph"
+              viewBox="0 0 620 540"
+              role="group"
+              aria-label="Graph vertices and coloring"
+              xmlns="http://www.w3.org/2000/svg"
+            ></svg>
+            <p class="hint" id="graph-note"></p>
+          </section>
+          <section class="inspection">
+            <p class="eyebrow">Selected vertex</p>
+            <h2 id="vertex-title"></h2>
+            <p id="vertex-info"></p>
+            <div id="neighbors"></div>
+            <hr />
+            <p class="eyebrow">Evidence for the bounds</p>
+            <p id="bounds-note"></p>
+            <p class="hint">
+              The displayed coloring is always a verified upper-bound witness.
+              The highlighted clique is a valid lower-bound witness, not
+              necessarily a maximum clique.
+            </p>
+          </section>
+        </div>
+        <div class="section-heading">
+          <h2>Keep conflicts explicit.</h2>
+          <button id="undo" disabled>Undo edit</button>
+        </div>
+        <form id="edge-form" class="edge-form">
+          <label>First vertex<select id="from"></select></label
+          ><label>Second vertex<select id="to"></select></label
+          ><label
+            >Change<select id="edge-action">
+              <option value="add">Add conflict</option>
+              <option value="remove">Remove conflict</option>
+            </select></label
+          ><button class="primary">Apply edge change</button>
+        </form>
+        <details>
+          <summary>Color groups &amp; assignment</summary>
+          <div id="groups" class="groups"></div>
+          <p class="hint">
+            Vertices in a color group have no edges between them. Applications
+            such as register allocation or scheduling require additional domain
+            constraints that this graph alone does not represent.
+          </p>
+        </details>
+        <details>
+          <summary>Exact-search trials &amp; event preview</summary>
+          <div id="trials"></div>
+          <label>Inspect trial<select id="trial"></select></label>
+          <p id="trace-note" class="hint"></p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Depth</th>
+                  <th>Vertex</th>
+                  <th>Color</th>
+                </tr>
+              </thead>
+              <tbody id="trace"></tbody>
+            </table>
+          </div>
+          <p class="hint">
+            Preview is limited to 200 assignment/backtrack/dead-end events per
+            trial. Exact infeasibility comes from the completed search, not from
+            this partial display. Clique vertices are fixed to distinct colors
+            before search; unused color labels are introduced in order to remove
+            equivalent permutations.
+          </p>
+        </details>
+        <div class="exports">
+          <button id="save">Save graph</button
+          ><button id="export">Export solving evidence</button
+          ><button id="csv">Export assignment CSV</button
+          ><button id="svg">Export graph SVG</button>
+        </div>
+      </section>
+      <details>
+        <summary>Edit vertices &amp; edges as JSON</summary>
+        <p class="hint">
+          Use vertices, edges, palette, and budget. Vertices are unique ASCII
+          names. Edges are undirected pairs; loops and duplicates are rejected.
+          At most 24 vertices.
+        </p>
+        <textarea
+          id="json"
+          rows="17"
+          spellcheck="false"
+          maxlength="100000"
+          aria-label="Graph JSON"
+        ></textarea
+        ><button id="apply">Apply graph</button>
+      </details>
+      <details>
+        <summary>Algorithm &amp; boundaries</summary>
+        <p>
+          A saturation-first greedy coloring establishes a verified upper bound.
+          A greedy clique witness establishes a lower bound. Exact backtracking
+          tries each unresolved color count, choosing the uncolored vertex with
+          the most distinct neighbor colors, then highest degree, then input
+          order.
+        </p>
+        <p>
+          A completed failed search raises the lower bound. A found coloring
+          lowers the upper bound. Equal bounds prove optimality. If the global
+          search-node budget is exhausted, the unresolved interval is retained;
+          the app never labels an unresolved palette impossible.
+        </p>
+        <p>
+          This is unweighted vertex coloring on simple undirected graphs. It
+          does not support preassigned colors, register classes, spills,
+          scheduling durations, or distributed solving. Search can grow
+          exponentially; a web worker keeps the bounded computation off the
+          interface thread.
+        </p>
+      </details>
+      <footer>
+        <span>Color the graph. Show the bounds.</span
+        ><span>Local computation / independently checked witnesses</span>
+      </footer>
+    </main>
+  </body>
+</html>
